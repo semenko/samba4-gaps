@@ -22,7 +22,7 @@ class App():
         if len(sys.argv) >= 2:
           if sys.argv[1] == "start":
             if(os.path.exists(self.pidfile_path)):
-              print "GAPS is already running. stop|start|restart"
+              print("GAPS is already running. stop|start|restart")
               sys.exit()
 
 

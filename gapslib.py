@@ -39,7 +39,7 @@ def esc(s):
     return quopri.encodestring(s, quotetabs=True)
 
 def print_entry(dn, user, mail, pwd):
-    print '%s\t%s\t%s\t%s' % tuple([esc(p) for p in [dn, user, mail, pwd]])
+    print('%s\t%s\t%s\t%s' % tuple([esc(p) for p in [dn, user, mail, pwd]]))
 
 def update_password(mail, pwd):
     pwd = pwd.encode('ascii', 'ignore')
@@ -48,7 +48,7 @@ def update_password(mail, pwd):
     if replaceDomain:
       mail = re.search("([\w.-]+)@", mail).group() + gaDomain
 
-    if passwords.has_key(mail):
+    if mail in passwords:
         if passwords[mail] == password:
             return 0
     try:
