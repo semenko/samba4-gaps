@@ -1,4 +1,4 @@
-Google Apps Password Sync for Samba4
+Sync Samba4 AD Passwords to Google Apps
 ===========
 
 
@@ -9,29 +9,26 @@ samba-tool domain passwordsettings set --store-plaintext=on
 
 Also you will have to use "Store passwords using reversible encryption" for each users. This can be enabled with MS Active Directory snap in tool from Windows.
 
-Python Dependencies
+
+Getting Credentials
 ===========
 
-- daemon
-- gdata
-- hashlib
-- syslog
-- samba
-
-gdata can be downloaded from https://code.google.com/p/gdata-python-client/downloads/detail?name=gdata-2.0.17.zip&can=2&q=
+1. 
+2.
+3.
+4.
 
 
-Install notes
+Installation
 ===========
 
-1. Copy gaps.py and gapslib.py to desired locations.
-2. Run gaps.py in cron or at startup from rc.local, or both (if you wan't to schedule a restart). Change your settings in gapslib.py to fit your setup.
-3. Change syslog to desired local and add it to your syslog config for custom log file
-4. Start the daemon and watch log file for updates
+0. Follow the "Getting Credentials" instructions above
+1. Install requirements: pip install -r requirements.txt
+2. Complete the rest of secrets.cfg (you started in "Getting Credentials")
+3. Modify the /usr/local/samba/private/sam.ldb.d/ permissions to be readable by this script
 
 
-If you are having trouble loading samba python modules please copy or symlink files and dirs in "/usr/local/samba/lib/python2.7/site-packages/" to "/usr/lib/python2.7/"
-
-Debug
+Security Warnings
 ===========
-If the daemon don't start change /dev/null to dev/tty in gaps.py and watch for error messages.
+
+1. Do NOT run this 
