@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+
 import binascii
+import ConfigParser
 import quopri
 import sys
 import textwrap
@@ -8,21 +10,30 @@ import syslog
 import gdata.apps.multidomain.client;
 import re
 
+
+# Add a specific import for the Python Samba packages
+sys.path.append("/usr/local/samba/lib/python2.7/site-packages/")
+
 from samba.credentials import Credentials
 from samba.auth import system_session
 from samba.dcerpc import drsblobs
 from samba.ndr import ndr_unpack
 from samba.samdb import SamDB
 
-### Custom Settings ###
-gaDomain = "yourdomain.com"
-gaEmail = "adminuser@yourdomain.com"
-gaPassword = "yourpassword"
-sambaPrivate = "/usr/local/samba/private"
-sambaPath = "DC=YOURDOMAIN,DC=COM"
-adBase = "ou=Domain Users,dc=yourdomain,dc=com"
-### Set this option to True if using domain aliases ###
-replaceDomain = False
+
+### Configure your settings in secrets.cfg
+config = ConfigParser.ConfigParser()
+config.read("secrets.cfg")
+
+gaDomain = config.get('google', 'domain')
+gaEmail = config.get('google', 'email')
+gaPassword = config.get('google', 'password')
+replaceDomain = config.get('google', 'replaceDomain')
+
+sambaPrivate = config.get('samba', 'sambaPrivate')
+sambaPath = config.get('samba', 'sambaPath')
+adBase = config.get('samba', 'adBase')
+
 
 ## Open connection to Syslog ##
 syslog.openlog(logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL3)
