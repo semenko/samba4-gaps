@@ -2,17 +2,21 @@
 
 import binascii
 import ConfigParser
+import gdata.apps.multidomain.client
+import hashlib
+import imp
 import quopri
+import re
+import syslog
 import sys
 import textwrap
-import hashlib
-import syslog
-import gdata.apps.multidomain.client;
-import re
 
 
-# Add a specific import for the Python Samba packages
-sys.path.append("/usr/local/samba/lib/python2.7/site-packages/")
+try:
+    imp.find_module('samba')
+except ImportError:
+    # Add a specific import for the Python Samba packages
+    sys.path.append("/usr/local/samba/lib/python2.7/site-packages/")
 
 from samba.credentials import Credentials
 from samba.auth import system_session
