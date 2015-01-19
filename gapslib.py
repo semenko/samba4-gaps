@@ -7,14 +7,13 @@ import ConfigParser
 import hashlib
 import httplib2
 import imp
-import inspect
 import os
+import pickle
 import quopri
 import re
 import smtplib
 import syslog
 import sys
-import textwrap
 
 # Google Imports
 from apiclient.discovery import build
@@ -40,20 +39,20 @@ from samba.samdb import SamDB
 
 assert(os.path.isfile('secret.p12'))
 
-config = ConfigParser.ConfigParser()
-config.read("secrets.cfg")
+_CONFIG = ConfigParser.ConfigParser()
+_CONFIG.read("secrets.cfg")
 
-notifyUser = config.get('general', 'notifyUser')
+NOTIFY_USER = _CONFIG.get('general', 'notifyUser')
 
-GA_DOMAIN = config.get('google', 'domain')
-SERVICE_ACCOUNT = config.get('google', 'serviceAccount')
-SERVICE_ACCOUNT_KEY = config.get('google', 'serviceAccountKey')
-ADMIN_TO_IMPERSONATE = config.get('google', 'adminToImpersonate')
-replaceDomain = config.get('google', 'replaceDomain')
+GA_DOMAIN = _CONFIG.get('google', 'domain')
+SERVICE_ACCOUNT = _CONFIG.get('google', 'serviceAccount')
+SERVICE_ACCOUNT_KEY = _CONFIG.get('google', 'serviceAccountKey')
+ADMIN_TO_IMPERSONATE = _CONFIG.get('google', 'adminToImpersonate')
+REPLACE_DOMAIN = _CONFIG.get('google', 'replaceDomain')
 
-sambaPrivate = config.get('samba', 'sambaPrivate')
-sambaPath = config.get('samba', 'sambaPath')
-adBase = config.get('samba', 'adBase')
+SAMBA_PRIVATE = _CONFIG.get('samba', 'sambaPrivate')
+SAMBA_PATH = _CONFIG.get('samba', 'sambaPath')
+AD_BASE = _CONFIG.get('samba', 'adBase')
 
 ##########################################
 
@@ -61,8 +60,7 @@ adBase = config.get('samba', 'adBase')
 ## Open connection to Syslog ##
 syslog.openlog(logoption=syslog.LOG_PID, facility=syslog.LOG_LOCAL3)
 
-## Cached SHA 1 Passwords ##
-passwords = {}
+
 
 def esc(s):
     return quopri.encodestring(s, quotetabs=True)
@@ -74,6 +72,7 @@ def send_email_to_admin(message):
     """
     Send an e-mail to an administrator (defined in secrets.cfg).
     """
+    # NOTIFY_USER
     pass
 
 def update_password(email, pwd):
@@ -81,9 +80,9 @@ def update_password(email, pwd):
     Update a Google Apps password.
     """
 
-    f = file('secret.p12', 'rb') # notasecret
-    key = f.read()
-    f.close()
+    # Grab the service account .p12 private key
+    with open('secret.p12', 'rb') as f:
+        service_secret_key = f.read()  # Google's fixed password for all keys is "notasecret"
     
     credentials = SignedJwtAssertionCredentials(
         SERVICE_ACCOUNT,
@@ -104,7 +103,7 @@ def update_password(email, pwd):
     pwd = pwd.encode('ascii', 'ignore')
     password = hashlib.sha1(pwd).hexdigest()
 
-    if replaceDomain:
+    if REPLACE_DOMAIN:
       email = re.search("([\w.-]+)@", email).group() + GA_DOMAIN
 
     if email in passwords:
@@ -126,10 +125,15 @@ def update_password(email, pwd):
         syslog.syslog(syslog.LOG_WARNING, '[ERROR] Could not update password for %s ' % email)
 
 
-def run():
+def check_for_changed_passwords():
+    """
+    Check for any Samba users with recently changed passwords.
+
+    We compare the AD parameter "pwdLastSet" with one stored in our pickle .cache.pkl file.
+    """
     creds = Credentials()
-    samdb = SamDB(url=(sambaPrivate + "/sam.ldb.d/" + sambaPath + ".ldb"), session_info=system_session(), credentials=creds.guess())
-    res = samdb.search(base=adBase, expression="(objectClass=user)", attrs=["supplementalCredentials", "sAMAccountName", "pwdLastSet", "mail"])
+    samdb = SamDB(url=(SAMBA_PRIVATE + "/sam.ldb.d/" + SAMBA_PATH + ".ldb"), session_info=system_session(), credentials=creds.guess())
+    res = samdb.search(base=AD_BASE, expression="(objectClass=user)", attrs=["supplementalCredentials", "sAMAccountName", "pwdLastSet", "mail"])
 
     for r in res:
          if not "supplementalCredentials" in r:
@@ -140,3 +144,6 @@ def run():
              if p.name == "Primary:CLEARTEXT":
                  update_password(str(r["mail"]), binascii.unhexlify(p.data).decode("utf16"))
 
+
+if __name__ == "__main__":
+    check_for_changed_passwords()
