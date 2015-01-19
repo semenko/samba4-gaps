@@ -50,12 +50,12 @@ def update_password(mail, pwd):
 
     if mail in passwords:
         if passwords[mail] == password:
-            return 0
+            return False
     try:
         user = client.RetrieveUser(mail)
     except:
         syslog.syslog(syslog.LOG_WARNING, '[WARNING] Account %s not found' % mail)
-        return 0
+        return False
 
     user.password = password
     user.hash_function="SHA-1"
@@ -69,7 +69,7 @@ def update_password(mail, pwd):
 def run():
     creds = Credentials()
     samdb = SamDB(url=(sambaPrivate + "/sam.ldb.d/" + sambaPath + ".ldb"), session_info=system_session(), credentials=creds.guess())
-    res = samdb.search(base=adBase, expression="(objectClass=user)", attrs=["supplementalCredentials", "sAMAccountName", "mail"])
+    res = samdb.search(base=adBase, expression="(objectClass=user)", attrs=["supplementalCredentials", "sAMAccountName", "pwdLastSet", "mail"])
 
     for r in res:
          if not "supplementalCredentials" in r:
@@ -79,7 +79,4 @@ def run():
          for p in scb.sub.packages:
              if p.name == "Primary:CLEARTEXT":
                  update_password(str(r["mail"]), binascii.unhexlify(p.data).decode("utf16"))
-
-
-
 
