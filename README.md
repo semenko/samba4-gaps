@@ -1,4 +1,4 @@
-Sync Samba4 AD Passwords to Google Apps
+[DEPRECATED] Sync Samba4 AD Passwords to Google Apps
 ===========
 
 
